@@ -6,11 +6,19 @@ import java.io.File;
 import java.io.IOException;
 
 public class processFrame {
+    static sobel sobelObject;
+    static nonmax nonMaxSuppressionObject;
     static circleHough circleHoughObject;
+    static hystThresh hystThreshObject;
+
 
     public static void main(String args[]) throws IOException {
+        sobelObject = new sobel();
+        nonMaxSuppressionObject = new nonmax();
+        hystThreshObject = new hystThresh();
         circleHoughObject = new circleHough();
-        Image image = ImageIO.read(new File("shapes2.png"));
+
+        Image image = ImageIO.read(new File("frame1.png"));
         ImageObserver io = new ImageObserver() {
             @Override
             public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
@@ -21,8 +29,8 @@ public class processFrame {
         int height = image.getHeight(io);
         int width = image.getWidth(io);
 
-        int radius = 60;
-        int lines = 2;
+        int radius = 25;
+        int lines = 10;
 
         int[] orig = new int[width * height];
 
@@ -33,10 +41,22 @@ public class processFrame {
             System.out.println("error: " + e2);
         }
 
+        sobelObject.init(orig, width, height);
+        orig = sobelObject.process();
+        double direction[] = new double[width * height];
+        direction = sobelObject.getDirection();
+
+        nonMaxSuppressionObject.init(orig, direction, width, height);
+        orig = nonMaxSuppressionObject.process();
+
+        hystThreshObject.init(orig, width, height, 25, 50);
+        orig = hystThreshObject.process();
+
         System.out.println(width + " " + height + " " + radius);
         circleHoughObject.init(orig, width, height, radius);
         circleHoughObject.setLines(lines);
         orig = circleHoughObject.process();
+
 
         showImage.showImage(orig, image);
     }
