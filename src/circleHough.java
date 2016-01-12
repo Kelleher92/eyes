@@ -2,14 +2,16 @@ public class circleHough {
 
     int[] input;
     int[] output;
-    float[] template={-1,0,1,-2,0,2,-1,0,1};;
+    float[] template = {-1, 0, 1, -2, 0, 2, -1, 0, 1};
+    ;
     double progress;
     int width;
     int height;
     int[] acc;
-    int accSize = 30;
+    int accSize = 2;
     int[] results;
     int r;
+    int threshold;
 
     public void circleHough() {
         progress = 0;
@@ -19,12 +21,14 @@ public class circleHough {
         r = radius;
         width = widthIn;
         height = heightIn;
-        input = new int[width*height];
-        output = new int[width*height];
+        input = new int[width * height];
+        output = new int[width * height];
         input = inputIn;
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
-                output[x + (width*y)] = 0xff000000;
+        threshold = width / 2;
+
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                output[x + (width * y)] = 0xff000000;
             }
         }
 
@@ -38,12 +42,12 @@ public class circleHough {
     public int[] process() {
 
         // for polar we need accumulator of 180degrees * the longest length in the image
-        int rmax = (int)Math.sqrt(width*width + height*height);
+        int rmax = (int) Math.sqrt(width * width + height * height);
         acc = new int[width * height];
 
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
-                acc[x*height + y] = 0;
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                acc[x * height + y] = 0;
             }
         }
 
@@ -51,17 +55,17 @@ public class circleHough {
         double t;
         progress = 0;
 
-        for(int x = 0; x < width; x++) {
+        for (int x = 0; x < width; x++) {
             progress += 0.5;
-            for(int y = 0; y < height; y++) {
+            for (int y = 0; y < height; y++) {
 
-                if ((input[y*width + x] & 0xff) == 255) {
+                if ((input[y * width + x] & 0xff) == 255) {
 
                     for (int theta = 0; theta < 360; theta++) {
                         t = (theta * 3.14159265) / 180;
-                        x0 = (int)Math.round(x - r * Math.cos(t));
-                        y0 = (int)Math.round(y - r * Math.sin(t));
-                        if(x0 < width && x0 > 0 && y0 < height && y0 > 0) {
+                        x0 = (int) Math.round(x - r * Math.cos(t));
+                        y0 = (int) Math.round(y - r * Math.sin(t));
+                        if (x0 < width && x0 > 0 && y0 < height && y0 > 0) {
                             acc[x0 + (y0 * width)] += 1;
                         }
                     }
@@ -73,8 +77,8 @@ public class circleHough {
         int max = 0;
 
         // Find max acc value
-        for(int x = 0; x < width ;x++) {
-            for(int y = 0; y < height ;y++) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
 
                 if (acc[x + (y * width)] > max) {
                     max = acc[x + (y * width)];
@@ -84,12 +88,14 @@ public class circleHough {
 
         // Normalise all the values
         int value;
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
-                value = (int)(((double)acc[x + (y * width)]/(double)max)*255.0);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                value = (int) (((double) acc[x + (y * width)] / (double) max) * 255.0);
                 acc[x + (y * width)] = 0xff000000 | (value << 16 | value << 8 | value);
             }
         }
+
+        System.out.println("length of acc = " + acc.length);
 
         findMaxima();
 
@@ -98,43 +104,56 @@ public class circleHough {
     }
 
     private int[] findMaxima() {
-        results = new int[accSize*3];
-        int[] output = new int[width*height];
+        results = new int[accSize * 3];
+        int[] output = new int[width * height];
+        Boolean right = false;
+        Boolean left = false;
 
-        for(int x = 0; x < width; x++) {
-            for(int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
                 int value = (acc[x + (y * width)] & 0xff);
 
                 // if its higher than lowest value add it and then sort
-                if (value > results[(accSize-1)*3]) {
+                if ((value > results[(accSize - 1) * 3])) {
 
                     // add to bottom of array
-                    results[(accSize-1)*3] = value;
-                    results[(accSize-1)*3+1] = x;
-                    results[(accSize-1)*3+2] = y;
+                    results[(accSize - 1) * 3] = value;
+                    results[(accSize - 1) * 3 + 1] = x;
+                    results[(accSize - 1) * 3 + 2] = y;
+
+                    // array is always updates to hold the greatest values, I need that one is from the left and one from the right
+                    if (x > threshold){
+                        right = true;
+                    }
+                    else
+                        left = true;
 
                     // shift up until its in right place
-                    int i = (accSize-2)*3;
-                    while ((i >= 0) && (results[i+3] > results[i])) {
-                        for(int j = 0; j < 3; j++) {
-                            int temp = results[i+j];
-                            results[i+j] = results[i+3+j];
-                            results[i+3+j] = temp;
+                    int i = (accSize - 2) * 3;
+                    while ((i >= 0) && (results[i + 3] > results[i])) {
+                        for (int j = 0; j < 3; j++) {
+                            int temp = results[i + j];
+                            results[i + j] = results[i + 3 + j];
+                            results[i + 3 + j] = temp;
                         }
                         i = i - 3;
                         if (i < 0) break;
                     }
+
+
                 }
             }
         }
 
-        double ratio = (double)(width/2)/accSize;
-        System.out.println("top "+ accSize + " matches:");
+        System.out.println("length of results = " + results.length);
 
-        for(int i = accSize-1; i >= 0; i--){
+        double ratio = (double) (width / 2) / accSize;
+        System.out.println("top " + accSize + " matches:");
+
+        for (int i = accSize - 1; i >= 0; i--) {
             progress += ratio;
-            System.out.println("value: " + results[i*3] + ", r: " + results[i*3+1] + ", theta: " + results[i*3+2]);
-            drawCircle(results[i*3], results[i*3+1], results[i*3+2]);
+            System.out.println("value: " + results[i * 3] + ", x: " + results[i * 3 + 1] + ", y: " + results[i * 3 + 2]);
+            drawCircle(results[i * 3], results[i * 3 + 1], results[i * 3 + 2]);
         }
 
         return output;
@@ -172,7 +191,7 @@ public class circleHough {
             setPixel(pix, xCenter - y, yCenter + x);
             setPixel(pix, xCenter - y, yCenter - x);
             x += 1;
-            y = (int) (Math.sqrt(r2 - x*x) + 0.5);
+            y = (int) (Math.sqrt(r2 - x * x) + 0.5);
         }
         if (x == y) {
             setPixel(pix, xCenter + x, yCenter + y);
@@ -187,7 +206,7 @@ public class circleHough {
     }
 
     public int getProgress() {
-        return (int)progress;
+        return (int) progress;
     }
 
 }

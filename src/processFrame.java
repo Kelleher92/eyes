@@ -31,7 +31,6 @@ public class processFrame {
 
         // radius to look for and number of matches to display
         int radius = 25;
-        int lines = 10;
 
         int[] orig = new int[width * height];
 
@@ -57,9 +56,7 @@ public class processFrame {
 
         System.out.println(width + " " + height + " " + radius);
         circleHoughObject.init(orig, width, height, radius);
-        circleHoughObject.setLines(lines);
         orig = circleHoughObject.process();
-
 
         showImage.showImage(orig, image);
     }
