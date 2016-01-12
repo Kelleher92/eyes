@@ -18,7 +18,7 @@ public class processFrame {
         hystThreshObject = new hystThresh();
         circleHoughObject = new circleHough();
 
-        Image image = ImageIO.read(new File("frame1.png"));
+        Image image = ImageIO.read(new File("frame2.png"));
         ImageObserver io = new ImageObserver() {
             @Override
             public boolean imageUpdate(Image img, int infoflags, int x, int y, int width, int height) {
@@ -29,11 +29,13 @@ public class processFrame {
         int height = image.getHeight(io);
         int width = image.getWidth(io);
 
+        // radius to look for and number of matches to display
         int radius = 25;
         int lines = 10;
 
         int[] orig = new int[width * height];
 
+        // grabs pixels from 'image' and fills array 'orig'
         PixelGrabber grabber = new PixelGrabber(image, 0, 0, width, height, orig, 0, width);
         try {
             grabber.grabPixels();
@@ -49,7 +51,8 @@ public class processFrame {
         nonMaxSuppressionObject.init(orig, direction, width, height);
         orig = nonMaxSuppressionObject.process();
 
-        hystThreshObject.init(orig, width, height, 25, 50);
+        // values going in here as upper and lower hysteresis limits (80 & 100)
+        hystThreshObject.init(orig, width, height, 80, 100);
         orig = hystThreshObject.process();
 
         System.out.println(width + " " + height + " " + radius);
