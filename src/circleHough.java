@@ -9,7 +9,7 @@ public class circleHough {
     int height;
     int[] acc;
     int accSize = 2;
-    int[] results;
+    int[] results, resultsRight, resultsLeft;
     int r;
     int threshold;
 
@@ -104,46 +104,64 @@ public class circleHough {
     }
 
     private int[] findMaxima() {
-        results = new int[accSize * 3];
+        resultsRight = new int[(accSize * 3)];
+        resultsLeft = new int[(accSize * 3)];
+        results = new int[6];
+
         int[] output = new int[width * height];
-        Boolean right = false;
-        Boolean left = false;
 
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 int value = (acc[x + (y * width)] & 0xff);
 
                 // if its higher than lowest value add it and then sort
-                if ((value > results[(accSize - 1) * 3])) {
+                if ((value > resultsRight[(accSize - 1) * 3])&&(x > threshold)) {
 
                     // add to bottom of array
-                    results[(accSize - 1) * 3] = value;
-                    results[(accSize - 1) * 3 + 1] = x;
-                    results[(accSize - 1) * 3 + 2] = y;
-
-                    // array is always updates to hold the greatest values, I need that one is from the left and one from the right
-                    if (x > threshold){
-                        right = true;
-                    }
-                    else
-                        left = true;
+                    resultsRight[(accSize - 1) * 3] = value;
+                    resultsRight[(accSize - 1) * 3 + 1] = x;
+                    resultsRight[(accSize - 1) * 3 + 2] = y;
 
                     // shift up until its in right place
                     int i = (accSize - 2) * 3;
-                    while ((i >= 0) && (results[i + 3] > results[i])) {
+                    while ((i >= 0) && (resultsRight[i + 3] > resultsRight[i])) {
                         for (int j = 0; j < 3; j++) {
-                            int temp = results[i + j];
-                            results[i + j] = results[i + 3 + j];
-                            results[i + 3 + j] = temp;
+                            int temp = resultsRight[i + j];
+                            resultsRight[i + j] = resultsRight[i + 3 + j];
+                            resultsRight[i + 3 + j] = temp;
                         }
                         i = i - 3;
                         if (i < 0) break;
                     }
+                }
+                else if ((value > resultsLeft[(accSize - 1) * 3]&&(x < threshold))){
 
+                    // add to bottom of array
+                    resultsLeft[(accSize - 1) * 3] = value;
+                    resultsLeft[(accSize - 1) * 3 + 1] = x;
+                    resultsLeft[(accSize - 1) * 3 + 2] = y;
 
+                    // shift up until its in right place
+                    int i = (accSize - 2) * 3;
+                    while ((i >= 0) && (resultsLeft[i + 3] > resultsLeft[i])) {
+                        for (int j = 0; j < 3; j++) {
+                            int temp = resultsLeft[i + j];
+                            resultsLeft[i + j] = resultsLeft[i + 3 + j];
+                            resultsLeft[i + 3 + j] = temp;
+                        }
+                        i = i - 3;
+                        if (i < 0) break;
+                    }
                 }
             }
         }
+
+        results[0] = resultsRight[0];
+        results[1] = resultsRight[1];
+        results[2] = resultsRight[2];
+        results[3] = resultsLeft[0];
+        results[4] = resultsLeft[1];
+        results[5] = resultsLeft[2];
 
         System.out.println("length of results = " + results.length);
 
