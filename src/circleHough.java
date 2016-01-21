@@ -45,6 +45,7 @@ public class circleHough {
         int rmax = (int) Math.sqrt(width * width + height * height);
         acc = new int[width * height];
 
+        // zero accumulator array
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 acc[x * height + y] = 0;
@@ -57,10 +58,10 @@ public class circleHough {
 
         for (int x = 0; x < width; x++) {
             progress += 0.5;
+            System.out.print("\n");
             for (int y = 0; y < height; y++) {
-
+                System.out.print(input[y * width + x] + " ");
                 if ((input[y * width + x] & 0xff) == 255) {
-
                     for (int theta = 0; theta < 360; theta++) {
                         t = (theta * 3.14159265) / 180;
                         x0 = (int) Math.round(x - r * Math.cos(t));
@@ -76,10 +77,9 @@ public class circleHough {
         // now normalise to 255 and put in format for a pixel array
         int max = 0;
 
-        // Find max acc value
+        // Find max accumulator value (only 124)
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-
                 if (acc[x + (y * width)] > max) {
                     max = acc[x + (y * width)];
                 }
@@ -156,14 +156,13 @@ public class circleHough {
             }
         }
 
+        // Take top results from left & right half of image
         results[0] = resultsRight[0];
         results[1] = resultsRight[1];
         results[2] = resultsRight[2];
         results[3] = resultsLeft[0];
         results[4] = resultsLeft[1];
         results[5] = resultsLeft[2];
-
-        System.out.println("length of results = " + results.length);
 
         double ratio = (double) (width / 2) / accSize;
         System.out.println("top " + accSize + " matches:");
@@ -177,10 +176,16 @@ public class circleHough {
         return output;
     }
 
-    private void setPixel(int value, int xPos, int yPos) {
+    private void setPixel(int xPos, int yPos) {
+        output[(yPos * width) + xPos] = -1;
+    }
 
-        output[(yPos * width) + xPos] = 0xff000000 | (value << 16 | value << 8 | value);
-
+    private void setCentre(int xPos, int yPos) {
+        output[(yPos * width) + xPos] = -1;
+        output[(yPos * width) + (xPos+1)] = -1;
+        output[(yPos * width) + (xPos-1)] = -1;
+        output[((yPos+1) * width) + xPos] = -1;
+        output[((yPos-1) * width) + xPos] = -1;
     }
 
     // draw circle at x y
@@ -190,32 +195,34 @@ public class circleHough {
         int radius = r;
         r2 = r * r;
 
-        setPixel(pix, xCenter, yCenter + radius);
-        setPixel(pix, xCenter, yCenter - radius);
-        setPixel(pix, xCenter + radius, yCenter);
-        setPixel(pix, xCenter - radius, yCenter);
+        setCentre(xCenter, yCenter);
+
+        setPixel(xCenter, yCenter + radius);
+        setPixel(xCenter, yCenter - radius);
+        setPixel(xCenter + radius, yCenter);
+        setPixel(xCenter - radius, yCenter);
 
         y = radius;
         x = 1;
         y = (int) (Math.sqrt(r2 - 1) + 0.5);
 
         while (x < y) {
-            setPixel(pix, xCenter + x, yCenter + y);
-            setPixel(pix, xCenter + x, yCenter - y);
-            setPixel(pix, xCenter - x, yCenter + y);
-            setPixel(pix, xCenter - x, yCenter - y);
-            setPixel(pix, xCenter + y, yCenter + x);
-            setPixel(pix, xCenter + y, yCenter - x);
-            setPixel(pix, xCenter - y, yCenter + x);
-            setPixel(pix, xCenter - y, yCenter - x);
+            setPixel(xCenter + x, yCenter + y);
+            setPixel(xCenter + x, yCenter - y);
+            setPixel(xCenter - x, yCenter + y);
+            setPixel(xCenter - x, yCenter - y);
+            setPixel(xCenter + y, yCenter + x);
+            setPixel(xCenter + y, yCenter - x);
+            setPixel(xCenter - y, yCenter + x);
+            setPixel(xCenter - y, yCenter - x);
             x += 1;
             y = (int) (Math.sqrt(r2 - x * x) + 0.5);
         }
         if (x == y) {
-            setPixel(pix, xCenter + x, yCenter + y);
-            setPixel(pix, xCenter + x, yCenter - y);
-            setPixel(pix, xCenter - x, yCenter + y);
-            setPixel(pix, xCenter - x, yCenter - y);
+            setPixel(xCenter + x, yCenter + y);
+            setPixel(xCenter + x, yCenter - y);
+            setPixel(xCenter - x, yCenter + y);
+            setPixel(xCenter - x, yCenter - y);
         }
     }
 

@@ -44,7 +44,9 @@ public class sobel {
                         sum += value;
                     }
                 }
+                
                 GY[y * width + x] = sum;
+
                 for (int x1 = 0; x1 < templateSize; x1++) {
                     for (int y1 = 0; y1 < templateSize; y1++) {
                         int x2 = (x - (templateSize - 1) / 2 + x1);
@@ -57,6 +59,7 @@ public class sobel {
 
             }
         }
+
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 total[y * width + x] = (int) Math.sqrt(GX[y * width + x] * GX[y * width + x] + GY[y * width + x] * GY[y * width + x]);
@@ -65,13 +68,16 @@ public class sobel {
                     max = total[y * width + x];
             }
         }
+
         float ratio = (float) max / 255;
+
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 sum = (int) (total[y * width + x] / ratio);
                 output[y * width + x] = 0xff000000 | ((int) sum << 16 | (int) sum << 8 | (int) sum);
             }
         }
+
         progress = width;
         return output;
     }
